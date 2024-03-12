@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
 import pyperclip
-
+import requests
 
 class UndoEntry(tk.Entry):
     def __init__(self, master=None, **kwargs):
@@ -42,29 +42,58 @@ def caesar_cipher(text, shift):
 
 def encrypt():
     input_text_1 = entry_1.get()
-    input_text_2 = caesar_cipher(input_text_1, 34)
+    encrypted_text = caesar_cipher(input_text_1, 34)
     entry_2.delete(0, tk.END)
-    entry_2.insert(0, input_text_2)
+    entry_2.insert(0, encrypted_text)
     entry_2.config(fg="black")
 
 
 def decrypt():
-    input_text_2 = entry_2.get()
-    input_text_1 = caesar_cipher(input_text_2, -34)
+    encrypted_text = entry_2.get()
+    decrypted_text = caesar_cipher(encrypted_text, -34)
     entry_1.delete(0, tk.END)
-    entry_1.insert(0, input_text_1)
+    entry_1.insert(0, decrypted_text)
     entry_1.config(fg="black")
+
 
 def info():
     help_text = """
-    This is a simple message encryption app.
-    - Enter your message in the 'Encrypt' box.
-    - Click 'Encrypt' to encrypt the message.
-    - Encrypted message will appear in the 'Decrypt' box.
-    - To decrypt, click 'Decrypt'.
-    """
-    messagebox.showinfo("Help", help_text)
+    Welcome to the Message Encryption App Help Guide!
 
+    This app allows you to encrypt and decrypt messages using a Caesar cipher.
+
+    How to Use:
+    1. Enter your message in the 'Encrypt' box.
+    2. Click 'Encrypt' to encrypt the message.
+    3. The encrypted message will appear in the 'Decrypt' box.
+    4. To decrypt, click 'Decrypt'.
+
+    Additional Features:
+    - Use the 'Paste' buttons to paste content from the clipboard into the text boxes.
+    - 'Undo' buttons allow you to undo your last text modification.
+    - Click 'Save' to save the encrypted message to the server.
+
+    Logging In:
+    - Enter your username and password to log in.
+    - If you are a new user, click 'Register' to create an account.
+
+    Logging Out:
+    - Click 'Log Out' to return to the login screen.
+
+    Note:
+    - Ensure you remember your username and password these will be required to retrieve your encrypted message after logging out.
+    - The app uses a Caesar cipher with a fixed shift value of 34.
+
+    Have fun encrypting and decrypting your messages!
+    """
+    help_window = tk.Tk()
+    help_window.title("Help")
+    help_window.geometry("700x400")
+
+    help_label = tk.Label(help_window, text=help_text, anchor="w", justify="left")
+    help_label.pack(padx=10, pady=10)
+
+    help_window.mainloop()
 
 
 def on_paste_1():
@@ -108,21 +137,80 @@ def restore_placeholder_2(event):
 
 
 def authenticate(username, password):
-    return username == "Ant" and password == "123"
+    auth_url = 'http://localhost:5000/authenticate'
+    response = requests.post(auth_url, json={'username': username, 'password': password})
+    if response.status_code == 200:
+        return True
+    else:
+        return False
+
+
+def register(username, password, encrypted_message):
+    register_url = 'http://localhost:5000/register'
+    response = requests.post(register_url, json={'username': username, 'password': password, 'encrypted_message': encrypted_message})
+    if response.status_code == 201:
+        return True
+    else:
+        return False
+
+
+def save_message(username, password):
+    encrypted_message = entry_2.get()
+
+    if username and password and encrypted_message:
+        save_url = 'http://localhost:5000/save_message'
+        response = requests.post(save_url, json={'username': username, 'password': password, 'encrypted_message': encrypted_message})
+
+        if response.status_code == 200:
+            messagebox.showinfo("Message Saved", "Message saved successfully!")
+        else:
+            messagebox.showerror("Error", "Failed to save message.")
+    else:
+        messagebox.showerror("Error", "Please provide a username, password, and message.")
 
 
 def login():
-    global username
     username = username_entry.get()
     password = password_entry.get()
     if authenticate(username, password):
         login_window.destroy()
-        show_main_gui()
+        encrypted_message = fetch_encrypted_message(username, password)
+        show_main_gui(username, password, encrypted_message)
     else:
         login_status.config(text="Invalid credentials")
 
+def logout():
+    root.destroy()
+    create_login_window()
 
-def show_main_gui():
+def fetch_encrypted_message(username, password):
+    get_message_url = f'http://localhost:5000/get_message/{username}'
+    response = requests.get(get_message_url)
+    if response.status_code == 200:
+        encrypted_message = response.json().get('encrypted_message', '')
+        return encrypted_message
+    else:
+        messagebox.showerror("Error", "Failed to fetch encrypted message.")
+        return ''
+
+
+def register_new_user():
+    username = username_entry.get()
+    password = password_entry.get()
+    if username and password: 
+        encrypted_message = caesar_cipher("Default message", 34) 
+        if register(username, password, encrypted_message):
+            messagebox.showinfo("Registration Successful", "User registered successfully!")
+            login_window.destroy()
+            show_main_gui(username, password)
+        else:
+            messagebox.showerror("Registration Failed", "Failed to register user.")
+    else:
+        messagebox.showerror("Error", "Please provide a username and password.")
+
+
+def show_main_gui(username, password, encrypted_message=None):
+    global root
     root = tk.Tk()
     root.title("Message Encryption App")
     root.geometry("400x200")
@@ -150,8 +238,8 @@ def show_main_gui():
     paste_button_1.pack(side=tk.LEFT)
     undo_button_1 = tk.Button(button_frame_1, text="Undo", command=on_undo_1)
     undo_button_1.pack(side=tk.LEFT)
-    submit_button_1 = tk.Button(button_frame_1, text="Encrypt", command=encrypt)
-    submit_button_1.pack(side=tk.LEFT)
+    encrypt_button = tk.Button(button_frame_1, text="Encrypt", command=encrypt)
+    encrypt_button.pack(side=tk.LEFT)
     info_button = tk.Button(button_frame_1, text="Info", command=info)
     info_button.pack(side=tk.LEFT)
 
@@ -170,34 +258,53 @@ def show_main_gui():
     paste_button_2.pack(side=tk.LEFT)
     undo_button_2 = tk.Button(button_frame_2, text="Undo", command=on_undo_2)
     undo_button_2.pack(side=tk.LEFT)
-    submit_button_2 = tk.Button(button_frame_2, text="Decrypt", command=decrypt)
-    submit_button_2.pack(side=tk.LEFT)
-    save_button = tk.Button(button_frame_2, text="Save", command=on_paste_2)
+    decrypt_button = tk.Button(button_frame_2, text="Decrypt", command=decrypt)
+    decrypt_button.pack(side=tk.LEFT)
+
+    save_button = tk.Button(button_frame_2, text="Save", command=lambda: save_message(username, password))
     save_button.pack(side=tk.LEFT)
+
+    logout_button = tk.Button(button_frame_2, text="Log Out", command=logout)
+    logout_button.pack(side=tk.LEFT)
+
+    if encrypted_message:
+        entry_2.delete(0, tk.END)
+        entry_2.insert(0, encrypted_message)
+        entry_2.config(fg="black")
 
     root.mainloop()
 
 
-login_window = tk.Tk()
-login_window.title("Login")
+def create_login_window():
+    global login_window
+    login_window = tk.Tk()
+    login_window.title("Login")
+    login_window.geometry("300x150")
 
-explanation_label = tk.Label(login_window, text="Welcome to the Message Encryption App!\nEncryption is a safe and easy way to protect your private messages so no one will be able to decode them without your approval\nIn under 5 seconds you will be able to encrypt or decrypt your private message from wandering eyes.\nTo start using this app you must provide us a username and unique password that will be associated with your message!")
-explanation_label.pack()
+    username_label = tk.Label(login_window, text="Username:")
+    username_label.pack()
 
-username_label = tk.Label(login_window, text="Username:")
-username_label.pack()
-username_entry = tk.Entry(login_window)
-username_entry.pack()
+    global username_entry
+    username_entry = tk.Entry(login_window, width=30)
+    username_entry.pack()
 
-password_label = tk.Label(login_window, text="Password:")
-password_label.pack()
-password_entry = tk.Entry(login_window, show="*")
-password_entry.pack()
+    password_label = tk.Label(login_window, text="Password:")
+    password_label.pack()
 
-login_button = tk.Button(login_window, text="Login", command=login)
-login_button.pack()
+    global password_entry
+    password_entry = tk.Entry(login_window, width=30, show="*")
+    password_entry.pack()
 
-login_status = tk.Label(login_window, text="")
-login_status.pack()
+    login_button = tk.Button(login_window, text="Login", command=login)
+    login_button.pack()
 
-login_window.mainloop()
+    register_button = tk.Button(login_window, text="Register", command=register_new_user)
+    register_button.pack()
+
+    global login_status
+    login_status = tk.Label(login_window, text="")
+    login_status.pack()
+
+    login_window.mainloop()
+
+create_login_window()
