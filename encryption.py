@@ -357,7 +357,9 @@ def create_login_window():
     **Security**: Add an extra layer of protection to your messages.
     **Data Protection**: Safeguard your communications from potential breaches.
 
-    If you are a new user, please register with a unique username and password.
+    If you are a new user, in order to encrypt your message and save it you must register with a unique username and password.
+
+    Returning users type in the username and password associated with your encrypted message!
 
     Enjoy encrypting and decrypting your messages!
     """
