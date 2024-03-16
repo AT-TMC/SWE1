@@ -64,10 +64,6 @@ def decrypt():
 
 def info():
     help_text = """
-    Welcome to the Message Encryption App Help Guide!
-
-    This app allows you to encrypt and decrypt messages using a Caesar cipher.
-
     How to Use:
     1. Enter your message in the 'Encrypt' box.
     2. Click 'Encrypt' to encrypt the message.
@@ -79,15 +75,11 @@ def info():
     - 'Undo' buttons allow you to undo your last text modification.
     - Click 'Save' to save the encrypted message to the server.
 
-    Logging In:
-    - Enter your username and password to log in.
-    - If you are a new user, click 'Register' to create an account.
-
     Logging Out:
     - Click 'Log Out' to return to the login screen.
 
     Note:
-    - Ensure you remember your username and password these will be required to retrieve your encrypted message after logging out.
+    - Ensure you remember your username and password these will be required to\nretrieve your encrypted message after logging out.
     - The app uses a Caesar cipher with a fixed shift value of 34.
 
     Have fun encrypting and decrypting your messages!
@@ -244,7 +236,7 @@ def register_new_user():
         encrypted_message = caesar_cipher("Default message", 34)
         if register(username, password, encrypted_message):
             messagebox.showinfo(
-                "Registration Successful", "User registered successfully!"
+                "Registration Successful", f"User: {username} registered successfully!"
                 )
             login_window.destroy()
             show_main_gui(username, password)
@@ -348,18 +340,17 @@ def create_login_window():
     welcome_message = """
     Welcome to the Message Encryption App!
 
-    This app allows you to securely encrypt and decrypt messages using a Caesar cipher.
+    This app allows you to securely encrypt and decrypt messages using a caesar cipher.
 
     Why Use Encryption?
 
     **Privacy**: Your messages are scrambled, making it difficult for unauthorized users to read them.
     **Confidentiality**: Keep your sensitive information safe from prying eyes.
-    **Security**: Add an extra layer of protection to your messages.
     **Data Protection**: Safeguard your communications from potential breaches.
 
-    If you are a new user, in order to encrypt your message and save it you must register with a unique username and password.
+    In order to encrypt your message and save it, new users must register with unique username and password.
 
-    Returning users type in the username and password associated with your encrypted message!
+    Returning users login with the username and password associated with your encrypted message!
 
     Enjoy encrypting and decrypting your messages!
     """
